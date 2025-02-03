@@ -41,8 +41,8 @@ impl Default for YtDlpApp {
         let config = Config::load();
 
         Self {
-            yt_dlp_path: String::new(),
-            download_dir: String::new(),
+            yt_dlp_path: config.yt_dlp_path.clone(),
+            download_dir: config.download_dir.clone(),
             config,
             url: String::new(),
             formats: Vec::new(),
