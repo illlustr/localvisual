@@ -5,18 +5,17 @@ use serde::{Deserialize, Serialize};
 use std::process::Command;
 use tokio::runtime::Runtime;
 use std::sync::mpsc::{self, Sender, Receiver};
-// Remove thread import
 
-#[derive(Debug, Deserialize, Serialize)]  // Add Serialize
+#[derive(Debug, Deserialize, Serialize)]
 pub struct FormatInfo {
     pub format_id: String,
     pub ext: String,
     pub resolution: Option<String>,
     pub vcodec: String,
-    pub acodec: Option<String>, // Now optional to allow missing values.
+    pub acodec: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]  // Add Serialize
+#[derive(Debug, Deserialize, Serialize)]
 pub struct VideoInfo {
     pub formats: Vec<FormatInfo>,
 }
@@ -30,10 +29,10 @@ pub struct YtDlpApp {
     pub status: String,
     runtime: Runtime,
     tx: Sender<String>,
-    rx: Receiver<String>,  // Add receiver
+    rx: Receiver<String>,
     is_fetching: bool,
     is_downloading: bool,
-    pub show_settings: bool,  // Make sure this is public
+    pub show_settings: bool,
 }
 
 impl Default for YtDlpApp {
@@ -63,15 +62,12 @@ impl Default for YtDlpApp {
 
 impl eframe::App for YtDlpApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Handle status updates
         while let Ok(message) = self.rx.try_recv() {
             self.process_status_message(&message);
         }
         
-        // Delegate UI rendering to the ui module
         ui::render_ui(self, ctx);
-        
-        // Request repaint if we're in a processing state
+
         if self.is_fetching || self.is_downloading {
             ctx.request_repaint();
         }
@@ -185,7 +181,6 @@ impl YtDlpApp {
     }
 }
 
-// Utility function used in the UI.
 pub fn short_codec(codec: &str) -> String {
     match codec {
         "avc1" | "h264" => "H.264".to_string(),
@@ -202,7 +197,6 @@ fn main() {
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(448.0, 384.0)),
         decorated: true,
-        // Remove transparent: true,
         ..Default::default()
     };
 

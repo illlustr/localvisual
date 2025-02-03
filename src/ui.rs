@@ -166,7 +166,6 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                             ui.end_row();
                         });
 
-                    // Scrollable area with dynamic height
                     let scroll_height = ui.available_height() - if app.selected_format.is_some() { ROW_HEIGHT + PADDING } else { 0.0 };
                     egui::ScrollArea::vertical()
                         .max_height(scroll_height)
@@ -189,7 +188,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                                 });
                         });
 
-                    // Download button (fixed position)
+                    // Download button
                     if app.selected_format.is_some() {
                         ui.add_space(PADDING);
                         ui.horizontal(|ui| {
