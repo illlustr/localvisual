@@ -198,9 +198,9 @@ pub fn short_codec(codec: &str) -> String {
     }
 }
 
-fn main() {
+fn main() { 
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(720.0, 512.0)),
+        initial_window_size: Some(egui::vec2(448.0, 384.0)),
         decorated: true,
         // Remove transparent: true,
         ..Default::default()
