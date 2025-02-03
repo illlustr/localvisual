@@ -8,6 +8,12 @@ const APP_NAME: &str = "localvisual";
 pub struct Config {
     pub yt_dlp_path: String,
     pub download_dir: String,
+    // UI Constants
+    pub row_height: f32,
+    pub spacing: f32,
+    pub margin: f32,
+    pub padding: f32,
+    pub icon_button_size: f32,
 }
 
 impl Default for Config {
@@ -21,6 +27,12 @@ impl Default for Config {
         Self {
             yt_dlp_path: exe_dir.join("yt-dlp.exe").to_string_lossy().to_string(),
             download_dir: exe_dir.to_string_lossy().to_string(),
+            // Default UI values
+            row_height: 28.0,
+            spacing: 2.0,
+            margin: 8.0,
+            padding: 8.0,
+            icon_button_size: 28.0,
         }
     }
 }
