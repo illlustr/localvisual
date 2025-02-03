@@ -205,7 +205,7 @@ fn process_video_response(json_str: &str) -> Result<Vec<FormatInfo>, Box<dyn std
     
     let formats = match response {
         VideoResponse::Single(video) => {
-            if (!video.formats.is_empty()) {
+            if !video.formats.is_empty() {
                 video.formats
             } else if let (Some(format_id), Some(ext)) = (video.format_id, video.ext) {
                 // Single format case (like direct media files)

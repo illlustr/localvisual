@@ -8,7 +8,7 @@ use eframe::egui;
 
 fn main() {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(448.0, 384.0)),
+        initial_window_size: Some(egui::vec2(448.0, 256.0)),
         decorated: true,
         ..Default::default()
     };

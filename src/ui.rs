@@ -141,6 +141,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                 if let Ok(mut clipboard) = arboard::Clipboard::new() {
                     if let Ok(text) = clipboard.get_text() {
                         app.url = text;
+                        app.fetch_formats();
                     }
                 }
             }
@@ -153,7 +154,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                 ui.available_width() - (app.config.icon_button_size * 2.0 + app.config.spacing * 2.0)
             };
             
-            text_edit_style(
+            let response = text_edit_style(
                 app.config.row_height,
                 app.config.margin,
                 ui,
@@ -162,6 +163,10 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                 available
             );
             
+            if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                app.fetch_formats();
+            }
+
             if !app.url.is_empty() {
                 if ui.add_sized(
                     egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
@@ -196,43 +201,89 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
         // Formats Section
         if !app.formats.is_empty() {
             ui.group(|ui| {
+                ui.set_width(ui.available_width());
                 ui.vertical(|ui| {
                     // Sticky header
-                    egui::Grid::new("formats_header")
-                        .num_columns(6)
-                        .spacing([app.config.spacing * 2.0, app.config.spacing])
-                        .min_col_width(60.0)
-                        .show(ui, |ui| {
-                            ui.horizontal_centered(|ui| ui.strong("Select"));
-                            ui.horizontal_centered(|ui| ui.strong("ID"));
-                            ui.horizontal_centered(|ui| ui.strong("Type"));
-                            ui.horizontal_centered(|ui| ui.strong("Resolution"));
-                            ui.horizontal_centered(|ui| ui.strong("Video"));
-                            ui.horizontal_centered(|ui| ui.strong("Audio"));
-                            ui.end_row();
-                        });
+                    let total_width = ui.available_width() - (app.config.spacing * 12.0);  // Account for grid spacing
+                    let col_widths = [
+                        0.08, // Select (smaller)
+                        0.17, // ID (larger)
+                        0.15, // Type
+                        0.2,  // Resolution
+                        0.2,  // Video
+                        0.2   // Audio
+                    ];
+                    
+                    egui::ScrollArea::horizontal().show(ui, |ui| {
+                        egui::Grid::new("formats_header")
+                            .num_columns(6)
+                            .spacing([app.config.spacing * 2.0, app.config.spacing])
+                            .show(ui, |ui| {
+                                for (i, width) in col_widths.iter().enumerate() {
+                                    let column_width = total_width * width;
+                                    match i {
+                                        0 => ui.add_sized([column_width, app.config.row_height], egui::Label::new("Select")),
+                                        1 => ui.add_sized([column_width, app.config.row_height], egui::Label::new("ID")),
+                                        2 => ui.add_sized([column_width, app.config.row_height], egui::Label::new("Type")),
+                                        3 => ui.add_sized([column_width, app.config.row_height], egui::Label::new("Resolution")),
+                                        4 => ui.add_sized([column_width, app.config.row_height], egui::Label::new("Video")),
+                                        5 => ui.add_sized([column_width, app.config.row_height], egui::Label::new("Audio")),
+                                        _ => unreachable!(),
+                                    };
+                                }
+                                ui.end_row();
+                            });
 
-                    let scroll_height = ui.available_height() - if app.selected_format.is_some() { app.config.row_height + app.config.padding } else { 0.0 };
-                    egui::ScrollArea::vertical()
-                        .max_height(scroll_height)
-                        .show(ui, |ui| {
-                            egui::Grid::new("formats_grid")
-                                .num_columns(6)
-                                .striped(true)
-                                .spacing([app.config.spacing * 2.0, app.config.spacing])
-                                .min_col_width(60.0)
-                                .show(ui, |ui| {
-                                    for (index, format) in app.formats.iter().enumerate() {
-                                        ui.radio_value(&mut app.selected_format, Some(index), "");
-                                        ui.monospace(&format.format_id);
-                                        ui.label(&format.ext);
-                                        ui.label(format.resolution.as_deref().unwrap_or("N/A"));
-                                        ui.label(short_codec(&format.vcodec));
-                                        ui.label(format.acodec.as_deref().unwrap_or("N/A"));
-                                        ui.end_row();
-                                    }
-                                });
-                        });
+                        let scroll_height = ui.available_height() - if app.selected_format.is_some() { app.config.row_height + app.config.padding } else { 0.0 };
+                        egui::ScrollArea::vertical()
+                            .max_height(scroll_height)
+                            .show(ui, |ui| {
+                                egui::Grid::new("formats_grid")
+                                    .num_columns(6)
+                                    .striped(true)
+                                    .spacing([app.config.spacing * 2.0, app.config.spacing])
+                                    .show(ui, |ui| {
+                                        for (index, format) in app.formats.iter().enumerate() {
+                                            for (i, width) in col_widths.iter().enumerate() {
+                                                let column_width = total_width * width;
+                                                match i {
+                                                    0 => {
+                                                        if ui.add_sized([column_width, app.config.row_height], 
+                                                            egui::SelectableLabel::new(
+                                                                app.selected_format == Some(index),
+                                                                "○"
+                                                            )).clicked() {
+                                                            app.selected_format = Some(index);
+                                                        }
+                                                    },
+                                                    1 => {
+                                                        ui.add_sized([column_width, app.config.row_height],
+                                                            egui::Label::new(egui::RichText::new(&format.format_id).monospace()));
+                                                    },
+                                                    2 => {
+                                                        ui.add_sized([column_width, app.config.row_height],
+                                                            egui::Label::new(&format.ext));
+                                                    },
+                                                    3 => {
+                                                        ui.add_sized([column_width, app.config.row_height],
+                                                            egui::Label::new(format.resolution.as_deref().unwrap_or("N/A")));
+                                                    },
+                                                    4 => {
+                                                        ui.add_sized([column_width, app.config.row_height],
+                                                            egui::Label::new(short_codec(&format.vcodec)));
+                                                    },
+                                                    5 => {
+                                                        ui.add_sized([column_width, app.config.row_height],
+                                                            egui::Label::new(format.acodec.as_deref().unwrap_or("N/A")));
+                                                    },
+                                                    _ => unreachable!(),
+                                                };
+                                            }
+                                            ui.end_row();
+                                        }
+                                    });
+                            });
+                    });
 
                     // Download button
                     if app.selected_format.is_some() {
