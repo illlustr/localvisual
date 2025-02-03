@@ -71,6 +71,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                             ).clicked() {
                                 if let Some(path) = rfd::FileDialog::new().pick_file() {
                                     app.yt_dlp_path = path.to_string_lossy().to_string();
+                                    app.save_config();
                                 }
                             }
                         });
@@ -84,6 +85,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                             ).clicked() {
                                 if let Some(path) = rfd::FileDialog::new().pick_folder() {
                                     app.download_dir = path.to_string_lossy().to_string();
+                                    app.save_config();
                                 }
                             }
                         });

@@ -1,5 +1,7 @@
 mod ui;
+mod config;
 
+use config::Config;
 use eframe::egui;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
@@ -33,19 +35,18 @@ pub struct YtDlpApp {
     is_fetching: bool,
     is_downloading: bool,
     pub show_settings: bool,
+    config: Config,
 }
 
 impl Default for YtDlpApp {
     fn default() -> Self {
         let runtime = Runtime::new().unwrap();
         let (tx, rx) = mpsc::channel();
+        let config = Config::load();
 
         Self {
-            yt_dlp_path: "yt-dlp.exe".to_string(),
-            download_dir: std::env::current_dir()
-                .unwrap()
-                .to_string_lossy()
-                .to_string(),
+            yt_dlp_path: config.yt_dlp_path.clone(),
+            download_dir: config.download_dir.clone(),
             url: String::new(),
             formats: Vec::new(),
             selected_format: None,
@@ -56,6 +57,7 @@ impl Default for YtDlpApp {
             is_fetching: false,
             is_downloading: false,
             show_settings: false,
+            config,
         }
     }
 }
@@ -177,6 +179,14 @@ impl YtDlpApp {
                 }
                 _ => {}
             }
+        }
+    }
+
+    fn save_config(&mut self) {
+        self.config.yt_dlp_path = self.yt_dlp_path.clone();
+        self.config.download_dir = self.download_dir.clone();
+        if let Err(e) = self.config.save() {
+            self.status = format!("❌ Failed to save config: {}", e);
         }
     }
 }
