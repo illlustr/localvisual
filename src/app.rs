@@ -14,8 +14,27 @@ pub struct FormatInfo {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct VideoInfo {
+#[serde(untagged)]
+pub enum VideoResponse {
+    Single(SingleVideo),
+    Multiple(Vec<SingleVideo>),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SingleVideo {
+    #[serde(default)]
     pub formats: Vec<FormatInfo>,
+    #[serde(default)]
+    pub format_id: Option<String>,
+    #[serde(default)]
+    pub ext: Option<String>,
+    #[serde(default)]
+    pub resolution: Option<String>,
+    #[serde(default)]
+    pub vcodec: Option<String>,
+    #[serde(default)]
+    pub acodec: Option<String>,
+    // Add more fields as needed
 }
 
 pub struct YtDlpApp {
@@ -78,12 +97,13 @@ impl YtDlpApp {
             match result {
                 Ok(output) => {
                     let output_str = String::from_utf8_lossy(&output.stdout);
-                    match serde_json::from_str::<VideoInfo>(&output_str) {
-                        Ok(video_info) => {
-                            let _ = tx.send(format!("FORMATS:{}", serde_json::to_string(&video_info).unwrap()));
+                    let formats = process_video_response(&output_str);
+                    match formats {
+                        Ok(formats) => {
+                            let _ = tx.send(format!("FORMATS:{}", serde_json::to_string(&formats).unwrap()));
                         }
                         Err(e) => {
-                            let _ = tx.send(format!("ERROR:Error parsing JSON: {}", e));
+                            let _ = tx.send(format!("ERROR:Error parsing response: {}", e));
                         }
                     }
                 }
@@ -143,8 +163,8 @@ impl YtDlpApp {
         if let Some((status_type, content)) = message.split_once(':') {
             match status_type {
                 "FORMATS" => {
-                    if let Ok(video_info) = serde_json::from_str::<VideoInfo>(content) {
-                        self.formats = video_info.formats;
+                    if let Ok(formats) = serde_json::from_str::<Vec<FormatInfo>>(content) {
+                        self.formats = formats;
                         self.status = format!("✅ Found {} formats", self.formats.len());
                     }
                     self.is_fetching = false;
@@ -178,6 +198,40 @@ impl YtDlpApp {
     pub fn is_busy(&self) -> bool {
         self.is_fetching || self.is_downloading
     }
+}
+
+fn process_video_response(json_str: &str) -> Result<Vec<FormatInfo>, Box<dyn std::error::Error>> {
+    let response: VideoResponse = serde_json::from_str(json_str)?;
+    
+    let formats = match response {
+        VideoResponse::Single(video) => {
+            if (!video.formats.is_empty()) {
+                video.formats
+            } else if let (Some(format_id), Some(ext)) = (video.format_id, video.ext) {
+                // Single format case (like direct media files)
+                vec![FormatInfo {
+                    format_id,
+                    ext,
+                    resolution: video.resolution,
+                    vcodec: video.vcodec.unwrap_or_else(|| "unknown".to_string()),
+                    acodec: video.acodec,
+                }]
+            } else {
+                vec![]
+            }
+        }
+        VideoResponse::Multiple(videos) => {
+            videos.into_iter()
+                .flat_map(|v| v.formats)
+                .collect()
+        }
+    };
+
+    if formats.is_empty() {
+        return Err("No formats found".into());
+    }
+
+    Ok(formats)
 }
 
 pub fn short_codec(codec: &str) -> String {

@@ -2,7 +2,7 @@ mod app;
 mod config;
 mod ui;
 
-pub use app::{YtDlpApp, FormatInfo, VideoInfo, short_codec};
+pub use app::{YtDlpApp, FormatInfo, short_codec};
 
 use eframe::egui;
 
