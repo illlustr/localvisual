@@ -44,27 +44,47 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
             ui.group(|ui| {
                 ui.set_width(ui.available_width());
                 
-                ui.columns(2, |cols| {
-                    cols[0].vertical(|ui| {
-                        ui.set_width(140.0);
-                        ui.vertical_centered_justified(|ui| {
-                            ui.label("YT-DLP Path:");
-                            ui.add_space(app.config.row_height);
-                            ui.label("Save To:");
-                            ui.add_space(app.config.row_height);
-                            ui.label("Row Height:");
-                            ui.label("Spacing:");
-                            ui.label("Margin:");
-                            ui.label("Padding:");
-                            ui.label("Icon Size:");
+                egui::CollapsingHeader::new("📝 UI Settings")
+                    .default_open(false)
+                    .show(ui, |ui| {
+                        ui.columns(2, |cols| {
+                            cols[0].vertical(|ui| {
+                                ui.set_width(140.0);
+                                ui.vertical_centered_justified(|ui| {
+                                    ui.label("Row Height:");
+                                    ui.label("Spacing:");
+                                    ui.label("Margin:");
+                                    ui.label("Padding:");
+                                    ui.label("Icon Size:");
+                                });
+                            });
+
+                            cols[1].vertical(|ui| {
+                                ui.spacing_mut().item_spacing.y = app.config.padding;
+                                
+                                // UI settings
+                                ui.add(egui::Slider::new(&mut app.config.row_height, 20.0..=40.0).text("px"));
+                                ui.add(egui::Slider::new(&mut app.config.spacing, 0.0..=10.0).text("px"));
+                                ui.add(egui::Slider::new(&mut app.config.margin, 0.0..=20.0).text("px"));
+                                ui.add(egui::Slider::new(&mut app.config.padding, 0.0..=20.0).text("px"));
+                                ui.add(egui::Slider::new(&mut app.config.icon_button_size, 20.0..=40.0).text("px"));
+                                
+                                if ui.button("Save UI Settings").clicked() {
+                                    app.save_config();
+                                }
+                            });
                         });
                     });
 
-                    cols[1].vertical(|ui| {
-                        ui.spacing_mut().item_spacing.y = app.config.padding;
-                        
-                        // Path settings
+                ui.add_space(app.config.padding);
+
+                // Path settings
+                egui::CollapsingHeader::new("📂 Paths")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        // YT-DLP Path
                         ui.horizontal(|ui| {
+                            ui.label("YT-DLP Path:");
                             let available = ui.available_width() - (app.config.icon_button_size + app.config.spacing);
                             text_edit_style(
                                 app.config.row_height,
@@ -85,7 +105,9 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                             }
                         });
                         
+                        // Download Directory
                         ui.horizontal(|ui| {
+                            ui.label("Save To:");
                             let available = ui.available_width() - (app.config.icon_button_size + app.config.spacing);
                             text_edit_style(
                                 app.config.row_height,
@@ -105,19 +127,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                                 }
                             }
                         });
-
-                        // UI settings
-                        ui.add(egui::Slider::new(&mut app.config.row_height, 20.0..=40.0).text("px"));
-                        ui.add(egui::Slider::new(&mut app.config.spacing, 0.0..=10.0).text("px"));
-                        ui.add(egui::Slider::new(&mut app.config.margin, 0.0..=20.0).text("px"));
-                        ui.add(egui::Slider::new(&mut app.config.padding, 0.0..=20.0).text("px"));
-                        ui.add(egui::Slider::new(&mut app.config.icon_button_size, 20.0..=40.0).text("px"));
-                        
-                        if ui.button("Save UI Settings").clicked() {
-                            app.save_config();
-                        }
                     });
-                });
             });
             ui.add_space(app.config.padding);
         }
