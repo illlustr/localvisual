@@ -198,6 +198,13 @@ impl YtDlpApp {
     pub fn is_busy(&self) -> bool {
         self.is_fetching || self.is_downloading
     }
+
+    pub fn clear_state(&mut self) {
+        self.url.clear();
+        self.formats.clear();
+        self.selected_format = None;
+        self.status.clear();
+    }
 }
 
 fn process_video_response(json_str: &str) -> Result<Vec<FormatInfo>, Box<dyn std::error::Error>> {

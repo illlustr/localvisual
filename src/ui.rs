@@ -11,6 +11,86 @@ fn text_edit_style(row_height: f32, margin: f32, ui: &mut egui::Ui, text: &mut S
     ).on_hover_text(hint.unwrap_or(""))
 }
 
+fn render_top_bar(app: &mut YtDlpApp, ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.heading(":D");
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let settings_button = egui::Button::new("⚙")
+                .fill(if app.show_settings {
+                    ui.style().visuals.selection.bg_fill
+                } else {
+                    ui.style().visuals.widgets.inactive.bg_fill
+                });
+            
+            if ui.add_sized(
+                egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
+                settings_button
+            ).clicked() {
+                app.show_settings = !app.show_settings;
+            }
+        });
+    });
+}
+
+fn render_url_input(app: &mut YtDlpApp, ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        // Paste button
+        if ui.add_sized(
+            egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
+            egui::Button::new("📋")
+        ).on_hover_text("Paste").clicked() {
+            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                if let Ok(text) = clipboard.get_text() {
+                    app.url = text;
+                    app.fetch_formats();
+                }
+            }
+        }
+        
+        ui.add_space(app.config.spacing);
+        
+        // URL input field
+        let available = if app.url.is_empty() {
+            ui.available_width()
+        } else {
+            ui.available_width() - (app.config.icon_button_size * 2.0 + app.config.spacing * 2.0)
+        };
+        
+        let response = text_edit_style(
+            app.config.row_height,
+            app.config.margin,
+            ui,
+            &mut app.url,
+            Some("Paste URL here"),
+            available
+        );
+        
+        if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+            app.fetch_formats();
+        }
+
+        // Action buttons
+        if !app.url.is_empty() {
+            render_url_action_buttons(app, ui);
+        }
+    });
+}
+
+fn render_url_action_buttons(app: &mut YtDlpApp, ui: &mut egui::Ui) {
+    if ui.add_sized(
+        egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
+        egui::Button::new("🔍")
+    ).on_hover_text("Fetch Formats").clicked() {
+        app.fetch_formats();
+    }
+    if ui.add_sized(
+        egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
+        egui::Button::new("❌")
+    ).on_hover_text("Clear").clicked() {
+        app.clear_state();
+    }
+}
+
 pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.spacing_mut().item_spacing = egui::vec2(app.config.spacing, app.config.spacing);
@@ -18,24 +98,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
         ui.set_min_height(ui.available_height());
 
         // Top bar
-        ui.horizontal(|ui| {
-            ui.heading("🌐");
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let settings_button = egui::Button::new("⚙")
-                    .fill(if app.show_settings {
-                        ui.style().visuals.selection.bg_fill
-                    } else {
-                        ui.style().visuals.widgets.inactive.bg_fill
-                    });
-                
-                if ui.add_sized(
-                    egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
-                    settings_button
-                ).clicked() {
-                    app.show_settings = !app.show_settings;
-                }
-            });
-        });
+        render_top_bar(app, ui);
 
         ui.add_space(app.config.padding);
 
@@ -133,58 +196,7 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
         }
 
         // URL Input
-        ui.horizontal(|ui| {
-            if ui.add_sized(
-                egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
-                egui::Button::new("📋")
-            ).on_hover_text("Paste").clicked() {
-                if let Ok(mut clipboard) = arboard::Clipboard::new() {
-                    if let Ok(text) = clipboard.get_text() {
-                        app.url = text;
-                        app.fetch_formats();
-                    }
-                }
-            }
-            
-            ui.add_space(app.config.spacing);
-            
-            let available = if app.url.is_empty() {
-                ui.available_width()
-            } else {
-                ui.available_width() - (app.config.icon_button_size * 2.0 + app.config.spacing * 2.0)
-            };
-            
-            let response = text_edit_style(
-                app.config.row_height,
-                app.config.margin,
-                ui,
-                &mut app.url,
-                Some("Paste URL here"),
-                available
-            );
-            
-            if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                app.fetch_formats();
-            }
-
-            if !app.url.is_empty() {
-                if ui.add_sized(
-                    egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
-                    egui::Button::new("🔍")
-                ).on_hover_text("Fetch Formats").clicked() {
-                    app.fetch_formats();
-                }
-                if ui.add_sized(
-                    egui::Vec2::new(app.config.icon_button_size, app.config.icon_button_size),
-                    egui::Button::new("❌")
-                ).on_hover_text("Clear").clicked() {
-                    app.url.clear();
-                    app.formats.clear();
-                    app.selected_format = None;
-                    app.status.clear();
-                }
-            }
-        });
+        render_url_input(app, ui);
 
         ui.add_space(app.config.padding);
 
@@ -206,9 +218,9 @@ pub fn render_ui(app: &mut YtDlpApp, ctx: &egui::Context) {
                     // Sticky header
                     let total_width = ui.available_width() - (app.config.spacing * 12.0);  // Account for grid spacing
                     let col_widths = [
-                        0.08, // Select (smaller)
-                        0.17, // ID (larger)
-                        0.15, // Type
+                        0.04, // Select (smaller)
+                        0.08, // ID (larger)
+                        0.16, // Type
                         0.2,  // Resolution
                         0.2,  // Video
                         0.2   // Audio

@@ -2,8 +2,11 @@ mod app;
 mod config;
 mod ui;
 
-pub use app::{YtDlpApp, FormatInfo, short_codec};
+// Include and re-export generated version info
+include!(concat!(env!("OUT_DIR"), "/version.rs"));
+pub use self::{APP_NAME, APP_NAME_FULL, APP_VERSION, APP_AUTHOR, APP_DESCRIPTION, APP_NAME_LOWER};
 
+pub use app::{YtDlpApp, FormatInfo, short_codec};
 use eframe::egui;
 
 fn main() {
@@ -14,7 +17,7 @@ fn main() {
     };
 
     if let Err(e) = eframe::run_native(
-        "LocalVisual",
+        APP_NAME,
         options,
         Box::new(|_cc| Box::new(YtDlpApp::default())),
     ) {
