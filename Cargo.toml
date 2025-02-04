@@ -1,16 +1,17 @@
 [package]
-name = "localvisual"
+name = "LoVA"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 eframe = "0.22"
-egui = "0.22"
+egui = { version = "0.22", features = ["persistence"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros", "process", "time"] }
 rfd = "0.11"
-winapi = { version = "0.3.9", features = ["winuser", "windef"] }  # Add this line
+winapi = { version = "0.3.9", features = ["winuser", "windef"] }
 arboard = "3.2"
 
 [profile.release]
@@ -18,4 +19,4 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
-strip = "symbols"
+strip = true
