@@ -34,7 +34,6 @@ pub struct SingleVideo {
     pub vcodec: Option<String>,
     #[serde(default)]
     pub acodec: Option<String>,
-    // Add more fields as needed
 }
 
 pub struct YtDlpApp {

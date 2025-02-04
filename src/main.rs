@@ -2,9 +2,7 @@ mod app;
 mod config;
 mod ui;
 
-// Include and re-export generated version info
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
-pub use self::{APP_NAME, APP_NAME_FULL, APP_VERSION, APP_AUTHOR, APP_DESCRIPTION, APP_NAME_LOWER};
 
 pub use app::{YtDlpApp, FormatInfo, short_codec};
 use eframe::egui;
