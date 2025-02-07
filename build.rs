@@ -5,7 +5,7 @@ use std::fs;
 // Version information
 const APP_NAME: &str = "LoVA";
 const APP_NAME_FULL: &str = "LocalVisualAudio";
-const APP_VERSION: &str = "0.1.0";
+const APP_VERSION: &str = "0.1.0.1";
 const APP_AUTHOR: &str = "NAIIVE";
 const APP_DESCRIPTION: &str = "Media Downloader";
 const APP_NAME_LOWER: &str = "lova";
@@ -36,16 +36,16 @@ pub const APP_NAME_LOWER: &str = "{}";"#,
         .expect("Failed to write version.rs");
 
     let version_parts: Vec<&str> = APP_VERSION.split('.').collect();
-    let (v1, v2, v3) = match version_parts.as_slice() {
-        [a, b, c] => (*a, *b, *c),
-        _ => ("0", "0", "0"),
+    let (v1, v2, v3, v4) = match version_parts.as_slice() {
+        [a, b, c, d] => (*a, *b, *c, *d),
+        _ => ("0", "0", "0", "0"),
     };
 
     // Create resources.rc
     let rc_content = format!(r#"id ICON "icon.ico"
 1 VERSIONINFO
-FILEVERSION {v1},{v2},{v3},0
-PRODUCTVERSION {v1},{v2},{v3},0
+FILEVERSION {v1},{v2},{v3},{v4}
+PRODUCTVERSION {v1},{v2},{v3},{v4}
 FILEFLAGSMASK 0x3fL
 FILEFLAGS 0x0L
 FILEOS 0x40004L
